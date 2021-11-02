@@ -1,1 +1,98 @@
+library IEEE;
+use IEEE.numeric_bit.all;
+
+entity full_adder is
+    port(
+        a, b, cin: in bit;
+        s, cout: out bit
+    );
+end entity;
+
+architecture full_adder_arch of full_adder is
+    signal a_xor_b: bit;
+begin
+    a_xor_b <= a xor b;
+    s <= a_xor_b xor cin;
+    cout <= (a_xor_b and cin) or (a and b);
+end architecture;
+
+
+library ieee;
+use ieee.numeric_bit.all;
+
+entity mux is
+    port(
+        I1, I2, I3, I4: in bit;
+        operation: in bit_vector(1 downto 0);
+        O1: out bit
+    );
+end mux;
+
+architecture mux_arch of mux is
+begin
+    with operation select
+        O1 <= I1 when "00",
+            I2 when "01",
+            I3 when "10",
+            I4 when others; 
+end mux_arch;
+
+
+library ieee;
+use ieee.numeric_bit.all;
+
+entity alu1bit is
+    port(
+        a, b, cin, less: in bit;
+        result, cout, set, overflow: out bit;
+        ainvert, binvert: in bit;
+        operation: in bit_vector(1 downto 0)
+    );
+end entity;
+
+architecture alu1bit_arch of alu1bit is
+    component full_adder is --Somador
+        port(
+            a, b, cin: in bit;
+            s, cout: out bit
+        );
+    end component;
+
+    component mux is --Multiplexador
+        port(
+            I1, I2, I3, I4: in bit;
+            operation: in bit_vector(1 downto 0);
+            O1: out bit
+        );
+    end component;
+    signal a1, b1, fa_soma, fa_cout1: bit;
+begin
+    adder: full_adder port map (
+        a => a1,
+        b => b1,
+        cin => cin,
+        s => fa_soma,
+        cout => fa_cout1
+    );
+
+    -- Invertendo a ^ b
+    with ainvert select
+        a1 <= not(a) when '1',
+        a when others;
+    with binvert select
+        b1 <= not(b) when '1', 
+        b when others;
+    
+    -- Colocando os resultados da ALU com suas respectivas entradas 
+    multiplexador: mux port map (
+        I1 => (a1 and b1),
+        I2 => (a1 or b1),
+        I3 => fa_soma,
+        I4 => less,
+        O1 => result
+    );
+    cout <= fa_cout1;
+    set <= fa_soma;
+    overflow <= cin xor fa_cout1;
+end architecture;
 
